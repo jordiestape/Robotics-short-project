@@ -37,11 +37,9 @@ fv.vertices=fv.vertices;
 ma=max(fv.vertices); mi=min(fv.vertices); dmami=ma-mi;
 scale = 1.9/pdist([mi;ma], 'euclidean');
 
-fv.vertices = scale .* fv.vertices
-
 fv.vertices = setMatrixTorus(fv.vertices);
-% fv.vertices = scale .* fv.vertices (Scale torus solution)
-fv.vertices = transl(0.6,0.3*cos(pi/9),(0.75+sin(pi/9)*0.3)) * trotx(-160) * fv.vertices;
+fv.vertices = scale .* fv.vertices
+fv.vertices = transl(0.6,0.3*cos(pi/9),0.75+sin(pi/9)*0.3) * trotx(-160) * fv.vertices;
 fv.vertices = resetMatrixTorus(fv.vertices);
 
 SS=patch(fv,'FaceColor',       [0.8 0.8 1.0], ...
