@@ -35,7 +35,7 @@ alpha 0.3
 fv=stlread('Torus.stl');% fv is a struct with faces and vertices
 fv.vertices=fv.vertices;
 ma=max(fv.vertices); mi=min(fv.vertices); dmami=ma-mi;
-scale = 1.9/pdist([mi;ma], 'euclidean');
+scale = 0.3/dmami(2);
 
 fv.vertices = scale .* fv.vertices
 
@@ -75,19 +75,48 @@ axis([0 3 0 3 0 3]);
 % c) The reference frames for all welding points, such that z-axis of the tool 
 % is orthogonal to the surface of the torus and the x-axis is in the direction of 
 % spiral trajectory. Draw in scale the frames
-
+    
     n=8; m=8; px=-0.8;py=0;pz=0;r=0.15;
     for i=0:m
         for j=1:n
             if (i~=8)
-                Ptos(:,:,i*n+j)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(180*(i*n+j)/(n*m))*transl(px,py,pz)*trotz(360*j/n)*transl(r,0,0);
+                Ptos_spiral(:,:,i*n+j)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(180*(i*n+j)/(n*m))*transl(px,py,pz)*trotz(360*j/n)*transl(r,0,0);
             end
         end
     end
     
-    coor_circle=transl(Ptos)';
-    plot3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),'r','LineWidth',2);
+    coor_circle=transl(Ptos_spiral)';
+    plot3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),'g','LineWidth',2);
+    scatter3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),'r','fillet');
     axis equal
+    
+    s=8; c=100; r=0.01; l=0.08; offset=15;
+    for i=0:s
+        for j=1:c
+            if(i~=s)
+       
+                if(j==100)
+                   Ptos_groove(:,:,i*c+j)=Ptos_groove(:,:,i*c+1);
+                elseif (j<c/2)
+                   Ptos_groove(:,:,i*c+j)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.95,0,sin(degtorad(-90+180*i/s))*0.95)*troty(180*i/s)*trotz(90)*trotz(360*j/c)*transl(r,0,0);
+                else 
+                   Ptos_groove(:,:,i*c+j)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.95,0,sin(degtorad(-90+180*i/s))*0.95)*troty(180*i/s)*trotz(90)*transl(0,-l,0)*trotz(360*j/c)*transl(r,0,0);
+                end
+                    
+            end
+        end
+    end
+       
+    coor_groove=transl(Ptos_groove)';
+    
+    for i=0:7
+       
+       plot3(coor_groove(1,i*c+1:(i+1)*c),coor_groove(2,i*c+1:(i+1)*c),coor_groove(3,i*c+1:(i+1)*c),'b','LineWidth',1);
+      
+    end
+    
+    axis equal
+    
 
 %% Computing motor torques for the static forces.co
 % Give here your code to fill two tables with the motor torque at each robot pose:
