@@ -58,9 +58,9 @@ axis('image');
 axis 'equal'
 
 mdl_puma560
-p560.base = transl(1.3, cos(pi/9)*0.3+0.5, 1.65)*trotx(20);
+p560.base = transl(1.3, cos(pi/9)*0.3+0.2, 1.5)*trotx(20);
 p560.links(1, 2).a=0.7
-p560.links(1, 3).a=0.5
+p560.links(1, 3).a=0.25
 p560.plot(qz);
 hold on;
 axis([0 3 0 3 0 3]);
@@ -114,22 +114,21 @@ axis([0 3 0 3 0 3]);
        plot3(coor_groove(1,i*c+1:(i+1)*c),coor_groove(2,i*c+1:(i+1)*c),coor_groove(3,i*c+1:(i+1)*c),'b','LineWidth',1);
     end
     
-%      Q_0 = p560.ikine6s(transl(Ptos_groove(:,:,(0*c)+1:(1)*c)), 'run');
-%      Q_1 = p560.ikine6s(transl(Ptos_groove(:,:,(1*c)+1:(2)*c)), 'run');
-%      Q_2 = p560.ikine6s(transl(Ptos_groove(:,:,(2*c)+1:(3)*c)), 'run');
-%      Q_3 = p560.ikine6s(transl(Ptos_groove(:,:,(3*c)+1:(4)*c)), 'run');
-%     
+     Q_1 = p560.ikine6s(transl(Ptos_groove(:,:,(0*c)+1:(i+1)*c)), 'run');
+     Q_2 = p560.ikine6s(transl(Ptos_groove(:,:,(1*c)+1:(i+1)*c)), 'run');
+     Q_3 = p560.ikine6s(transl(Ptos_groove(:,:,(2*c)+1:(i+1)*c)), 'run');
+     Q_4 = p560.ikine6s(transl(Ptos_groove(:,:,(3*c)+1:(i+1)*c)), 'run');
+    
     for i=0:7
         if (i < 4)
-            Q = p560.ikine6s(transl(Ptos_groove(:,:,(i*c)+1:(i+1)*c)), 'run')
+            Q(i+1) = p560.ikine6s(transl(Ptos_groove(:,:,(i*c)+1:(i+1)*c)), 'run')
         else
-            Q = p560.ikine6s(transl(Ptos_groove(:,:,(i*c)+1:(i+1)*c)), 'luf')
+            Q(i+1) = p560.ikine6s(transl(Ptos_groove(:,:,(i*c)+1:(i+1)*c)), 'lun')
         end
-        p560.plot(Q)
     end
     
     %Q= p560.ikine6s(transl(Ptos_spiral), 'run')
- 
+    p560.plot(Q)
     
     axis equal
     
