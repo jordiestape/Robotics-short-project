@@ -39,10 +39,15 @@ scale = 0.3/dmami(2);
 
 fv.vertices = scale .* fv.vertices
 
-fv.vertices = setMatrixTorus(fv.vertices);
+[n,~] = size(fv.vertices);
+fv.vertices = [transpose(fv.vertices); ones(1,n)];
+
 % fv.vertices = scale .* fv.vertices (Scale torus solution)
 fv.vertices = transl(0.6,0.3*cos(pi/9),(0.75+sin(pi/9)*0.3)) * trotx(-160) * fv.vertices;
-fv.vertices = resetMatrixTorus(fv.vertices);
+
+[m,~] = size(fv.vertices);
+fv.vertices(m,:)=[];
+fv.vertices = transpose(fv.vertices);
 
 SS=patch(fv,'FaceColor',       [0.8 0.8 1.0], ...
          'EdgeColor',       'none',        ...
@@ -59,11 +64,11 @@ axis 'equal'
 
 mdl_puma560
 p560.base = transl(1.3, cos(pi/9)*0.3+0.5, 1.65)*trotx(20);
-p560.links(1, 2).a=0.7
-p560.links(1, 3).a=0.5
+p560.links(1, 2).a=1
+p560.links(1, 3).a=0.8
 p560.plot(qz);
 hold on;
-axis([0 3 0 3 0 3]);
+axis([0 5 0 5 0 5]);
 
 
 %% Working points.
@@ -82,57 +87,104 @@ axis([0 3 0 3 0 3]);
         for j=1:n
             if (i~=8)
                 Ptos_spiral(:,:,i*n+j)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(180*(i*n+j)/(n*m))*transl(px,py,pz)*trotz(360*j/n)*transl(r,0,0);
+                
+                Ptos_spiral_welding(:,:,i*n*3+(3*j)-2)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(180*(i*n+j)/(n*m))*transl(px,py,pz)*trotz(360*j/n)*transl(r*3,0,0);
+                Ptos_spiral_welding(:,:,i*n*3+(3*j)-1)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(180*(i*n+j)/(n*m))*transl(px,py,pz)*trotz(360*j/n)*transl(r,0,0);
+                Ptos_spiral_welding(:,:,i*n*3+(3*j))=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(180*(i*n+j)/(n*m))*transl(px,py,pz)*trotz(360*j/n)*transl(r*3,0,0);
             end
         end
     end
-    
+   
     coor_circle=transl(Ptos_spiral)';
     plot3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),'g','LineWidth',2);
     scatter3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),'r','fillet');
     axis equal
     
-    s=8; c=10; r=0.01; l=0.08; offset=15;
-    for i=0:s
-        for j=1:c
-            if(i~=s)
-       
-                if(j==100)
-                   Ptos_groove(:,:,i*c+j)=Ptos_groove(:,:,i*c+1);
-                elseif (j<c/2)
-                   Ptos_groove(:,:,i*c+j)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.95,0,sin(degtorad(-90+180*i/s))*0.95)*troty(180*i/s)*trotz(90)*trotz(360*j/c)*transl(r,0,0);
-                else 
-                   Ptos_groove(:,:,i*c+j)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.95,0,sin(degtorad(-90+180*i/s))*0.95)*troty(180*i/s)*trotz(90)*transl(0,-l,0)*trotz(360*j/c)*transl(r,0,0);
-                end
-                   
+     for i=0:m-1
+        for j=1:4
+            if (j==1)
+                Q = p560.ikine6s(transl(Ptos_spiral_welding(:,:,(i*3*m+1):(3*i*m+1)+3*2*j)), 'run');
+            elseif (j==2) 
+                Q = p560.ikine6s(transl(Ptos_spiral_welding(:,:,(i*3*m+1)+6:(3*i*m+1)+3*2*j-3)), 'run');
+            elseif (j==3)
+              Q = p560.ikine6s(transl(Ptos_spiral_welding(:,:,(i*3*m+1)+12-3:(3*i*m+1)+3*2*j+3)), 'lun');    
+            else
+                Q = p560.ikine6s(transl(Ptos_spiral_welding(:,:,(i*3*m+1)+18+3:(3*i*m+1)+3*2*j-1)), 'ldn');
             end
+            p560.plot(Q);
         end
+    end
+    (3*(m-1)*m+1)+3*2*4
+    s=8; c=20; r=0.01; l=0.08; offset=15;
+    for i=0:s
+       if(i~=s)
+            for j=1:c
+                if(j==c)
+                    Ptos_groove(:,:,i*c+j)=Ptos_groove(:,:,i*c+1);
+                elseif (j<c/2)
+                    Ptos_groove(:,:,i*c+j)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.95,0,sin(degtorad(-90+180*i/s))*0.95)*troty(180*i/s)*trotz(90)*trotz(360*j/c)*transl(r,0,0);
+                else 
+                    Ptos_groove(:,:,i*c+j)= transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.95,0,sin(degtorad(-90+180*i/s))*0.95)*troty(180*i/s)*trotz(90)*transl(0,-l,0)*trotz(360*j/c)*transl(r,0,0);
+                end      
+            end
+        Ptos_groove_mill(:,:,(4*i)+1) = transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*1.2,0,sin(degtorad(-90+180*i/s))*1.2)*troty(180*i/s)*trotz(90);
+        Ptos_groove_mill(:,:,(4*i)+2) = transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.95,0,sin(degtorad(-90+180*i/s))*0.95)*troty(180*i/s)*trotz(90);
+        Ptos_groove_mill(:,:,(4*i)+3) = transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.95,0,sin(degtorad(-90+180*i/s))*0.95)*troty(180*i/s)*trotz(90)*transl(0,-l,0);
+        Ptos_groove_mill(:,:,(4*i)+4) = transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*1.2,0,sin(degtorad(-90+180*i/s))*1.2)*troty(180*i/s)*trotz(90)*transl(0,-l,0);   
+       end
     end
     
     coor_groove = transl(Ptos_groove)';
+    coor_groove_mill = transl(Ptos_groove_mill)';
     
     for i=0:7
-       plot3(coor_groove(1,i*c+1:(i+1)*c),coor_groove(2,i*c+1:(i+1)*c),coor_groove(3,i*c+1:(i+1)*c),'b','LineWidth',1);
+       plot3(coor_groove(1,i*c+1:(i+1)*c),coor_groove(2,i*c+1:(i+1)*c),coor_groove(3,i*c+1:(i+1)*c),'b','LineWidth',1); 
     end
-    
-%      Q_0 = p560.ikine6s(transl(Ptos_groove(:,:,(0*c)+1:(1)*c)), 'run');
-%      Q_1 = p560.ikine6s(transl(Ptos_groove(:,:,(1*c)+1:(2)*c)), 'run');
-%      Q_2 = p560.ikine6s(transl(Ptos_groove(:,:,(2*c)+1:(3)*c)), 'run');
-%      Q_3 = p560.ikine6s(transl(Ptos_groove(:,:,(3*c)+1:(4)*c)), 'run');
-%     
+  
     for i=0:7
         if (i < 4)
-            Q = p560.ikine6s(transl(Ptos_groove(:,:,(i*c)+1:(i+1)*c)), 'run')
+            Q = p560.ikine6s(transl(Ptos_groove_mill(:,:,(i*4+1):(i+1)*4)), 'run');
         else
-            Q = p560.ikine6s(transl(Ptos_groove(:,:,(i*c)+1:(i+1)*c)), 'luf')
+            Q = p560.ikine6s(transl(Ptos_groove_mill(:,:,(i*4+1):(i+1)*4)), 'luf');
         end
-        p560.plot(Q)
+        p560.plot(Q);
     end
     
-    %Q= p560.ikine6s(transl(Ptos_spiral), 'run')
- 
+
+    s=8; c=40; r=0.02; offset=13.5;
+    for i=0:s
+       if(i~=s)
+            for j=1:c
+                 Ptos_circle(:,:,i*c+j)=transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.8,0.15,sin(degtorad(-90+180*i/s))*0.8)*trotx(90)*trotz(360*j/c)*transl(r,0,0);
+            end
+        Ptos_circle_drill(:,:,(3*i)+1) = transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.8,0.2,sin(degtorad(-90+180*i/s))*0.8)*trotx(90);
+        Ptos_circle_drill(:,:,(3*i)+2) = transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.8,0.15,sin(degtorad(-90+180*i/s))*0.8)*trotx(90);
+        Ptos_circle_drill(:,:,(3*i)+3) = transl(0.6-px,0.3*cos(pi/9),0.75+sin(pi/9)*0.3)*trotx(20)*troty(90+offset)*transl(cos(degtorad(90+180*i/s))*0.8,0.2,sin(degtorad(-90+180*i/s))*0.8)*trotx(90);
+       end
+    end
+    
+    coor_circle = transl(Ptos_circle)';
+    % coor_circle_drill = transl(Ptos_circle_drill)';
+    
+    for i=0:7
+       plot3(coor_circle(1,i*c+1:(i+1)*c),coor_circle(2,i*c+1:(i+1)*c),coor_circle(3,i*c+1:(i+1)*c),'b');
+      
+    end
+    
+    for i=0:7
+        if (i < 4)
+            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), 'run')
+        else
+            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), 'run')
+        end
+        p560.plot(Q);
+    end
+
+    
+    %scatter3(coor_circle_drill(1,:),coor_circle_drill(2,:),coor_circle_drill(3,:),'g','LineWidth',1);
     
     axis equal
-    
+
 
 %% Computing motor torques for the static forces.co
 % Give here your code to fill two tables with the motor torque at each robot pose:
@@ -141,17 +193,4 @@ axis([0 3 0 3 0 3]);
 % Table 2 (6x8): Rows are the motor torques (6x1). Columns (1x8) are the
 % labeled milling of the groove.
 
-function y = setMatrixTorus(vertices)
 
-[n,~] = size(vertices);
-y = [transpose(vertices); ones(1,n)];
-
-end
-
-function y = resetMatrixTorus(vertices)
-
-[m,~] = size(vertices);
-vertices(m,:)=[];
-y = transpose(vertices);
-
-end
