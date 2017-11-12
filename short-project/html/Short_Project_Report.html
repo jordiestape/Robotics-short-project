@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>Short Project.</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-11-11"><meta name="DC.source" content="Short_Project_Report.m"><style type="text/css">
+      --><title>Short Project.</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-11-12"><meta name="DC.source" content="Short_Project_Report.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -66,7 +66,9 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
 
 
-  </style></head><body><div class="content"><h1>Short Project.</h1><!--introduction--><p>After atending the Laboratory session and Theory classes you must be able to answer the following questions. Add the necessary matlab and RTB sentences to this script for reporting your result. I strongly recoment to use as a reference help for the RTB the file 'robot.pdf' <a href="http://petercorke.com/wordpress/toolboxes/robotics-toolbox">http://petercorke.com/wordpress/toolboxes/robotics-toolbox</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Sketching the enviroment of the robotics work cell.</a></li><li><a href="#2">Working points.</a></li><li><a href="#3">Computing motor torques for the static forces.co</a></li></ul></div><h2 id="1">Sketching the enviroment of the robotics work cell.</h2><p>It is spected: main reference frames. Plot the robot Puma, draw the working table and the torus in working position. Give diferent points of view of the scenary: Top, Front, Lateral and isometrics view</p><pre class="codeinput">F1 = [0 2.5 2.5 0; 0 0 0.75 0.75; 0 0 0 0; 1 1 1 1];
+  </style></head><body><div class="content"><h1>Short Project.</h1><!--introduction--><p>After atending the Laboratory session and Theory classes you must be able to answer the following questions. Add the necessary matlab and RTB sentences to this script for reporting your result. I strongly recoment to use as a reference help for the RTB the file 'robot.pdf' <a href="http://petercorke.com/wordpress/toolboxes/robotics-toolbox">http://petercorke.com/wordpress/toolboxes/robotics-toolbox</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Sketching the enviroment of the robotics work cell.</a></li><li><a href="#2">Working points.</a></li><li><a href="#3">Computing motor torques for the static forces.co</a></li></ul></div><h2 id="1">Sketching the enviroment of the robotics work cell.</h2><p>It is spected: main reference frames. Plot the robot Puma, draw the working table and the torus in working position. Give diferent points of view of the scenary: Top, Front, Lateral and isometrics view</p><pre class="codeinput"><span class="comment">% Initialization of the faces of the table (placing suposing floor is on</span>
+<span class="comment">% z=0 and positioned with its frontal left vertex at (0,0,0)</span>
+F1 = [0 2.5 2.5 0; 0 0 0.75 0.75; 0 0 0 0; 1 1 1 1];
 F1 = trotx(90)*F1;
 
 F2 = [0 2.5 2.5 0; 0 0 0.6 0.6; 0 0 0 0; 1 1 1 1];
@@ -80,6 +82,7 @@ F4 = transl(2.5,0,0) * F3;
 F5 = [0 2.5 2.5 0; 0 0 sin(pi/9)*0.6+0.75 sin(pi/9)*0.6+0.75; 0 0 0 0; 1 1 1 1];
 F5 = transl(0,0.6*cos(pi/9),0) * trotx(90) * F5;
 
+<span class="comment">% Plotting the table</span>
 figure
 xlabel(<span class="string">'x'</span>);
 ylabel(<span class="string">'y'</span>);
@@ -88,23 +91,27 @@ axis <span class="string">'equal'</span>;
 fill3(F1(1,:),F1(2,:),F1(3,:),<span class="string">'r'</span>,F2(1,:),F2(2,:),F2(3,:),<span class="string">'r'</span>, F3(1,:),F3(2,:),F3(3,:),<span class="string">'r'</span>, F4(1,:),F4(2,:),F4(3,:),<span class="string">'r'</span>, F5(1,:),F5(2,:),F5(3,:),<span class="string">'r'</span>);
 alpha <span class="string">0.3</span>
 
-fv=stlread(<span class="string">'Torus.stl'</span>);<span class="comment">% fv is a struct with faces and vertices</span>
+<span class="comment">% Loading the Torus and scaling it to fit the size of the instructions</span>
+fv=stlread(<span class="string">'Torus.stl'</span>);
 fv.vertices=fv.vertices;
 ma=max(fv.vertices); mi=min(fv.vertices); dmami=ma-mi;
 scale = 0.3/dmami(2);
-
 fv.vertices = scale .* fv.vertices
 
+<span class="comment">% Preparing the torus to interact with it by appending a column of 1s to</span>
+<span class="comment">% the transposed fv.vertices</span>
 [n,~] = size(fv.vertices);
 fv.vertices = [transpose(fv.vertices); ones(1,n)];
 
-<span class="comment">% fv.vertices = scale .* fv.vertices (Scale torus solution)</span>
+<span class="comment">% Placing the torus onto de table</span>
 fv.vertices = transl(0.6,0.3*cos(pi/9),(0.75+sin(pi/9)*0.3)) * trotx(-160) * fv.vertices;
 
+<span class="comment">% Reseting fv.vertices</span>
 [m,~] = size(fv.vertices);
 fv.vertices(m,:)=[];
 fv.vertices = transpose(fv.vertices);
 
+<span class="comment">% Preparing to plot Torus</span>
 SS=patch(fv,<span class="string">'FaceColor'</span>,       [0.8 0.8 1.0], <span class="keyword">...</span>
          <span class="string">'EdgeColor'</span>,       <span class="string">'none'</span>,        <span class="keyword">...</span>
          <span class="string">'FaceLighting'</span>,    <span class="string">'gouraud'</span>,     <span class="keyword">...</span>
@@ -118,6 +125,7 @@ view(30,30)
 axis(<span class="string">'image'</span>);
 axis <span class="string">'equal'</span>
 
+<span class="comment">% Loading the puma and setting it up + ploting it.</span>
 mdl_puma560
 p560.base = transl(1.3, cos(pi/9)*0.3+0.5, 1.65)*trotx(20);
 p560.links(1, 2).a=1
@@ -170,7 +178,15 @@ base:    t = (1.3, 0.782, 1.65), RPY/xyz = (0, 0, 20) deg
 Warning: floor tiles too small, making them 2.000000 x bigger - change the size
 or disable them 
 Warning: arrow option requires arrow3 from FileExchange 
-</pre><img vspace="5" hspace="5" src="Short_Project_Report_01.png" style="width:560px;height:420px;" alt=""> <h2 id="2">Working points.</h2><p>Give here your code to get the variables to locate: a) The reference frame for all drills holes, such that z-axis is orthogonal to the surface of the torus and the x-axis is in the direction of minimun curvature. Draw in scale the frames b) Repeat the obove operation for the center of the milling groove. Draw this frames. c) The reference frames for all welding points, such that z-axis of the tool is orthogonal to the surface of the torus and the x-axis is in the direction of spiral trajectory. Draw in scale the frames</p><pre class="codeinput">    n=8; m=8; px=-0.8;py=0;pz=0;r=0.15;
+</pre><img vspace="5" hspace="5" src="Short_Project_Report_01.png" style="width:560px;height:420px;" alt=""> <h2 id="2">Working points.</h2><p>Give here your code to get the variables to locate: a) The reference frame for all drills holes, such that z-axis is orthogonal to the surface of the torus and the x-axis is in the direction of minimun curvature. Draw in scale the frames b) Repeat the obove operation for the center of the milling groove. Draw this frames. c) The reference frames for all welding points, such that z-axis of the tool is orthogonal to the surface of the torus and the x-axis is in the direction of spiral trajectory. Draw in scale the frames</p><pre class="codeinput">    <span class="comment">% Calculation of the welding points. We use 2 variables.</span>
+
+        <span class="comment">% 1. Ptos_spiral: it defines the points where we have to weld in order</span>
+        <span class="comment">% to plot them</span>
+
+        <span class="comment">% 2.Ptos_spiral_welding: it defines de poses puma has to do in</span>
+        <span class="comment">% order to reach each point. (3 points x welding point)</span>
+
+    n=8; m=8; px=-0.8;py=0;pz=0;r=0.15;
     <span class="keyword">for</span> i=0:m
         <span class="keyword">for</span> j=1:n
             <span class="keyword">if</span> (i~=8)
@@ -183,10 +199,18 @@ Warning: arrow option requires arrow3 from FileExchange
         <span class="keyword">end</span>
     <span class="keyword">end</span>
 
+    <span class="comment">% Plot of the welding points + line throught them</span>
     coor_circle=transl(Ptos_spiral)';
     plot3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),<span class="string">'g'</span>,<span class="string">'LineWidth'</span>,2);
     scatter3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),<span class="string">'r'</span>,<span class="string">'fillet'</span>);
     axis <span class="string">equal</span>
+
+    <span class="comment">% Animation for the puma, using the previously calculated</span>
+    <span class="comment">% Ptos_spiral_welding.</span>
+
+    <span class="comment">% Each circle of the spiral is divided into 4 different parts in order</span>
+    <span class="comment">% to change the access pose of the robot depending on the position</span>
+    <span class="comment">% of the torus it is accessing</span>
 
      <span class="keyword">for</span> i=0:m-1
         <span class="keyword">for</span> j=1:4
@@ -201,8 +225,16 @@ Warning: arrow option requires arrow3 from FileExchange
             <span class="keyword">end</span>
             p560.plot(Q);
         <span class="keyword">end</span>
-    <span class="keyword">end</span>
-    (3*(m-1)*m+1)+3*2*4
+     <span class="keyword">end</span>
+
+      <span class="comment">% Calculation of the milling points. We use 2 variables.</span>
+
+        <span class="comment">% 1. Ptos_groove: it defines the places where it is necessary to</span>
+        <span class="comment">% groove and it stores the points which define each groove.</span>
+
+        <span class="comment">% 2.Ptos_groove_mill: it defines de poses puma has to do in</span>
+        <span class="comment">% order to reach each point and to mill (4 points x milling point)</span>
+
     s=8; c=20; r=0.01; l=0.08; offset=15;
     <span class="keyword">for</span> i=0:s
        <span class="keyword">if</span>(i~=s)
@@ -222,12 +254,19 @@ Warning: arrow option requires arrow3 from FileExchange
        <span class="keyword">end</span>
     <span class="keyword">end</span>
 
+    <span class="comment">% Ploting the grooves</span>
     coor_groove = transl(Ptos_groove)';
-    coor_groove_mill = transl(Ptos_groove_mill)';
 
     <span class="keyword">for</span> i=0:7
        plot3(coor_groove(1,i*c+1:(i+1)*c),coor_groove(2,i*c+1:(i+1)*c),coor_groove(3,i*c+1:(i+1)*c),<span class="string">'b'</span>,<span class="string">'LineWidth'</span>,1);
     <span class="keyword">end</span>
+
+    <span class="comment">% Animation of the puma, using the previously calculated</span>
+    <span class="comment">% Ptos_groove_milling.</span>
+
+    <span class="comment">% We use the previously calculated points in the  Ptos_groove_mill and</span>
+    <span class="comment">% divide them in two groups. The left and the right ones to make the</span>
+    <span class="comment">% pose vary due to that variable</span>
 
     <span class="keyword">for</span> i=0:7
         <span class="keyword">if</span> (i &lt; 4)
@@ -238,6 +277,13 @@ Warning: arrow option requires arrow3 from FileExchange
         p560.plot(Q);
     <span class="keyword">end</span>
 
+    <span class="comment">% Calculation of the drilling points. We use 2 variables.</span>
+
+        <span class="comment">% 1. Ptos_circle: it defines the places where it is necessary to</span>
+        <span class="comment">% drill and it stores the points which define each circle.</span>
+
+        <span class="comment">% 2.Ptos_circle_drill: it defines de poses puma has to do in</span>
+        <span class="comment">% order to reach each point and to drill (3 points x drilling point)</span>
 
     s=8; c=40; r=0.02; offset=13.5;
     <span class="keyword">for</span> i=0:s
@@ -251,88 +297,28 @@ Warning: arrow option requires arrow3 from FileExchange
        <span class="keyword">end</span>
     <span class="keyword">end</span>
 
+    <span class="comment">% Ploting the circles</span>
     coor_circle = transl(Ptos_circle)';
-    <span class="comment">% coor_circle_drill = transl(Ptos_circle_drill)';</span>
 
     <span class="keyword">for</span> i=0:7
        plot3(coor_circle(1,i*c+1:(i+1)*c),coor_circle(2,i*c+1:(i+1)*c),coor_circle(3,i*c+1:(i+1)*c),<span class="string">'b'</span>);
 
     <span class="keyword">end</span>
 
+
+    <span class="comment">% Animation of the puma, using the previously calculated</span>
+    <span class="comment">% Ptos_circle_drill.</span>
+
     <span class="keyword">for</span> i=0:7
         <span class="keyword">if</span> (i &lt; 4)
-            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), <span class="string">'run'</span>)
+            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), <span class="string">'run'</span>);
         <span class="keyword">else</span>
-            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), <span class="string">'run'</span>)
+            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), <span class="string">'run'</span>);
         <span class="keyword">end</span>
         p560.plot(Q);
     <span class="keyword">end</span>
 
-
-    <span class="comment">%scatter3(coor_circle_drill(1,:),coor_circle_drill(2,:),coor_circle_drill(3,:),'g','LineWidth',1);</span>
-
     axis <span class="string">equal</span>
-</pre><pre class="codeoutput">
-ans =
-
-   193
-
-
-Q =
-
-   -2.2929    0.5440    3.6730    0.3104    2.3084    2.4747
-   -2.2558    0.5433    3.7091    0.2903    2.2843    2.4186
-   -2.2929    0.5440    3.6730    0.3104    2.3084    2.4747
-
-
-Q =
-
-   -2.1645    0.9105    3.4644    0.2368    2.1879    2.2748
-   -2.1293    0.9019    3.5063    0.2202    2.1629    2.2260
-   -2.1645    0.9105    3.4644    0.2368    2.1879    2.2748
-
-
-Q =
-
-   -1.8600    1.2726    3.3010    0.1097    2.0428    1.8935
-   -1.8383    1.2469    3.3507    0.1006    2.0212    1.8668
-   -1.8600    1.2726    3.3010    0.1097    2.0428    1.8935
-
-
-Q =
-
-   -1.3372    1.5055    3.2384   -0.0832    1.8786    1.3256
-   -1.3574    1.4603    3.2922   -0.0759    1.8716    1.3474
-   -1.3372    1.5055    3.2384   -0.0832    1.8786    1.3256
-
-
-Q =
-
-   -0.8376    1.4253    3.3101   -0.2376    1.8054    0.8122
-   -0.8901    1.3891    3.3593   -0.2231    1.8047    0.8678
-   -0.8376    1.4253    3.3101   -0.2376    1.8054    0.8122
-
-
-Q =
-
-   -0.5687    1.1365    3.4784   -0.3044    1.8492    0.5112
-   -0.6211    1.1175    3.5199   -0.2929    1.8430    0.5699
-   -0.5687    1.1365    3.4784   -0.3044    1.8492    0.5112
-
-
-Q =
-
-   -0.4482    0.7981    3.6887   -0.3360    1.9333    0.3498
-   -0.4949    0.7886    3.7245   -0.3265    1.9233    0.4049
-   -0.4482    0.7981    3.6887   -0.3360    1.9333    0.3498
-
-
-Q =
-
-   -0.4030    0.4619    3.9062   -0.3587    2.0302    0.2611
-   -0.4465    0.4573    3.9388   -0.3492    2.0183    0.3150
-   -0.4030    0.4619    3.9062   -0.3587    2.0302    0.2611
-
 </pre><img vspace="5" hspace="5" src="Short_Project_Report_02.png" style="width:560px;height:420px;" alt=""> <h2 id="3">Computing motor torques for the static forces.co</h2><p>Give here your code to fill two tables with the motor torque at each robot pose: Table 1 (6x16): Rows are the motor torques (6x1). Columns (1x16) are the labeled drills including the initial drill before milling. Table 2 (6x8): Rows are the motor torques (6x1). Columns (1x8) are the labeled milling of the groove.</p><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016b</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% Short Project.
@@ -347,6 +333,8 @@ Q =
 % Give diferent points of view of the scenary: Top, Front, Lateral and
 % isometrics view
 
+% Initialization of the faces of the table (placing suposing floor is on
+% z=0 and positioned with its frontal left vertex at (0,0,0)
 F1 = [0 2.5 2.5 0; 0 0 0.75 0.75; 0 0 0 0; 1 1 1 1];
 F1 = trotx(90)*F1;
 
@@ -361,6 +349,7 @@ F4 = transl(2.5,0,0) * F3;
 F5 = [0 2.5 2.5 0; 0 0 sin(pi/9)*0.6+0.75 sin(pi/9)*0.6+0.75; 0 0 0 0; 1 1 1 1];
 F5 = transl(0,0.6*cos(pi/9),0) * trotx(90) * F5;
 
+% Plotting the table
 figure
 xlabel('x');
 ylabel('y');
@@ -369,23 +358,27 @@ axis 'equal';
 fill3(F1(1,:),F1(2,:),F1(3,:),'r',F2(1,:),F2(2,:),F2(3,:),'r', F3(1,:),F3(2,:),F3(3,:),'r', F4(1,:),F4(2,:),F4(3,:),'r', F5(1,:),F5(2,:),F5(3,:),'r');
 alpha 0.3
 
-fv=stlread('Torus.stl');% fv is a struct with faces and vertices
+% Loading the Torus and scaling it to fit the size of the instructions
+fv=stlread('Torus.stl'); 
 fv.vertices=fv.vertices;
 ma=max(fv.vertices); mi=min(fv.vertices); dmami=ma-mi;
 scale = 0.3/dmami(2);
-
 fv.vertices = scale .* fv.vertices
 
+% Preparing the torus to interact with it by appending a column of 1s to
+% the transposed fv.vertices
 [n,~] = size(fv.vertices);
 fv.vertices = [transpose(fv.vertices); ones(1,n)];
 
-% fv.vertices = scale .* fv.vertices (Scale torus solution)
+% Placing the torus onto de table
 fv.vertices = transl(0.6,0.3*cos(pi/9),(0.75+sin(pi/9)*0.3)) * trotx(-160) * fv.vertices;
 
+% Reseting fv.vertices
 [m,~] = size(fv.vertices);
 fv.vertices(m,:)=[];
 fv.vertices = transpose(fv.vertices);
 
+% Preparing to plot Torus
 SS=patch(fv,'FaceColor',       [0.8 0.8 1.0], ...
          'EdgeColor',       'none',        ...
          'FaceLighting',    'gouraud',     ...
@@ -399,6 +392,7 @@ view(30,30)
 axis('image');
 axis 'equal'
 
+% Loading the puma and setting it up + ploting it.
 mdl_puma560
 p560.base = transl(1.3, cos(pi/9)*0.3+0.5, 1.65)*trotx(20);
 p560.links(1, 2).a=1
@@ -419,6 +413,14 @@ axis([0 5 0 5 0 5]);
 % is orthogonal to the surface of the torus and the x-axis is in the direction of 
 % spiral trajectory. Draw in scale the frames
     
+    % Calculation of the welding points. We use 2 variables.
+    
+        % 1. Ptos_spiral: it defines the points where we have to weld in order
+        % to plot them
+        
+        % 2.Ptos_spiral_welding: it defines de poses puma has to do in
+        % order to reach each point. (3 points x welding point)
+        
     n=8; m=8; px=-0.8;py=0;pz=0;r=0.15;
     for i=0:m
         for j=1:n
@@ -432,11 +434,19 @@ axis([0 5 0 5 0 5]);
         end
     end
    
+    % Plot of the welding points + line throught them
     coor_circle=transl(Ptos_spiral)';
     plot3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),'g','LineWidth',2);
     scatter3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),'r','fillet');
     axis equal
     
+    % Animation for the puma, using the previously calculated
+    % Ptos_spiral_welding. 
+    
+    % Each circle of the spiral is divided into 4 different parts in order 
+    % to change the access pose of the robot depending on the position
+    % of the torus it is accessing
+
      for i=0:m-1
         for j=1:4
             if (j==1)
@@ -450,8 +460,16 @@ axis([0 5 0 5 0 5]);
             end
             p560.plot(Q);
         end
-    end
-    (3*(m-1)*m+1)+3*2*4
+     end
+     
+      % Calculation of the milling points. We use 2 variables.
+
+        % 1. Ptos_groove: it defines the places where it is necessary to
+        % groove and it stores the points which define each groove.
+
+        % 2.Ptos_groove_mill: it defines de poses puma has to do in
+        % order to reach each point and to mill (4 points x milling point)
+     
     s=8; c=20; r=0.01; l=0.08; offset=15;
     for i=0:s
        if(i~=s)
@@ -471,13 +489,20 @@ axis([0 5 0 5 0 5]);
        end
     end
     
+    % Ploting the grooves
     coor_groove = transl(Ptos_groove)';
-    coor_groove_mill = transl(Ptos_groove_mill)';
     
     for i=0:7
        plot3(coor_groove(1,i*c+1:(i+1)*c),coor_groove(2,i*c+1:(i+1)*c),coor_groove(3,i*c+1:(i+1)*c),'b','LineWidth',1); 
     end
   
+    % Animation of the puma, using the previously calculated
+    % Ptos_groove_milling. 
+    
+    % We use the previously calculated points in the  Ptos_groove_mill and
+    % divide them in two groups. The left and the right ones to make the
+    % pose vary due to that variable
+
     for i=0:7
         if (i < 4)
             Q = p560.ikine6s(transl(Ptos_groove_mill(:,:,(i*4+1):(i+1)*4)), 'run');
@@ -487,7 +512,14 @@ axis([0 5 0 5 0 5]);
         p560.plot(Q);
     end
     
+    % Calculation of the drilling points. We use 2 variables.
 
+        % 1. Ptos_circle: it defines the places where it is necessary to
+        % drill and it stores the points which define each circle.
+
+        % 2.Ptos_circle_drill: it defines de poses puma has to do in
+        % order to reach each point and to drill (3 points x drilling point)
+        
     s=8; c=40; r=0.02; offset=13.5;
     for i=0:s
        if(i~=s)
@@ -500,26 +532,27 @@ axis([0 5 0 5 0 5]);
        end
     end
     
+    % Ploting the circles
     coor_circle = transl(Ptos_circle)';
-    % coor_circle_drill = transl(Ptos_circle_drill)';
     
     for i=0:7
        plot3(coor_circle(1,i*c+1:(i+1)*c),coor_circle(2,i*c+1:(i+1)*c),coor_circle(3,i*c+1:(i+1)*c),'b');
       
     end
     
+      
+    % Animation of the puma, using the previously calculated
+    % Ptos_circle_drill. 
+    
     for i=0:7
         if (i < 4)
-            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), 'run')
+            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), 'run');
         else
-            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), 'run')
+            Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), 'run');
         end
         p560.plot(Q);
     end
 
-    
-    %scatter3(coor_circle_drill(1,:),coor_circle_drill(2,:),coor_circle_drill(3,:),'g','LineWidth',1);
-    
     axis equal
 
 

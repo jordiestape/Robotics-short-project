@@ -10,6 +10,8 @@
 % Give diferent points of view of the scenary: Top, Front, Lateral and
 % isometrics view
 
+% Initialization of the faces of the table (placing suposing floor is on
+% z=0 and positioned with its frontal left vertex at (0,0,0)
 F1 = [0 2.5 2.5 0; 0 0 0.75 0.75; 0 0 0 0; 1 1 1 1];
 F1 = trotx(90)*F1;
 
@@ -24,6 +26,7 @@ F4 = transl(2.5,0,0) * F3;
 F5 = [0 2.5 2.5 0; 0 0 sin(pi/9)*0.6+0.75 sin(pi/9)*0.6+0.75; 0 0 0 0; 1 1 1 1];
 F5 = transl(0,0.6*cos(pi/9),0) * trotx(90) * F5;
 
+% Plotting the table
 figure
 xlabel('x');
 ylabel('y');
@@ -32,23 +35,27 @@ axis 'equal';
 fill3(F1(1,:),F1(2,:),F1(3,:),'r',F2(1,:),F2(2,:),F2(3,:),'r', F3(1,:),F3(2,:),F3(3,:),'r', F4(1,:),F4(2,:),F4(3,:),'r', F5(1,:),F5(2,:),F5(3,:),'r');
 alpha 0.3
 
-fv=stlread('Torus.stl');% fv is a struct with faces and vertices
+% Loading the Torus and scaling it to fit the size of the instructions
+fv=stlread('Torus.stl'); 
 fv.vertices=fv.vertices;
 ma=max(fv.vertices); mi=min(fv.vertices); dmami=ma-mi;
 scale = 0.3/dmami(2);
-
 fv.vertices = scale .* fv.vertices
 
+% Preparing the torus to interact with it by appending a column of 1s to
+% the transposed fv.vertices
 [n,~] = size(fv.vertices);
 fv.vertices = [transpose(fv.vertices); ones(1,n)];
 
-% fv.vertices = scale .* fv.vertices (Scale torus solution)
+% Placing the torus onto de table
 fv.vertices = transl(0.6,0.3*cos(pi/9),(0.75+sin(pi/9)*0.3)) * trotx(-160) * fv.vertices;
 
+% Reseting fv.vertices
 [m,~] = size(fv.vertices);
 fv.vertices(m,:)=[];
 fv.vertices = transpose(fv.vertices);
 
+% Preparing to plot Torus
 SS=patch(fv,'FaceColor',       [0.8 0.8 1.0], ...
          'EdgeColor',       'none',        ...
          'FaceLighting',    'gouraud',     ...
@@ -62,6 +69,7 @@ view(30,30)
 axis('image');
 axis 'equal'
 
+% Loading the puma and setting it up + ploting it.
 mdl_puma560
 p560.base = transl(1.3, cos(pi/9)*0.3+0.5, 1.65)*trotx(20);
 p560.links(1, 2).a=1
@@ -82,6 +90,14 @@ axis([0 5 0 5 0 5]);
 % is orthogonal to the surface of the torus and the x-axis is in the direction of 
 % spiral trajectory. Draw in scale the frames
     
+    % Calculation of the welding points. We use 2 variables.
+    
+        % 1. Ptos_spiral: it defines the points where we have to weld in order
+        % to plot them
+        
+        % 2.Ptos_spiral_welding: it defines de poses puma has to do in
+        % order to reach each point. (3 points x welding point)
+        
     n=8; m=8; px=-0.8;py=0;pz=0;r=0.15;
     for i=0:m
         for j=1:n
@@ -95,11 +111,19 @@ axis([0 5 0 5 0 5]);
         end
     end
    
+    % Plot of the welding points + line throught them
     coor_circle=transl(Ptos_spiral)';
     plot3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),'g','LineWidth',2);
     scatter3(coor_circle(1,:),coor_circle(2,:),coor_circle(3,:),'r','fillet');
     axis equal
     
+    % Animation for the puma, using the previously calculated
+    % Ptos_spiral_welding. 
+    
+    % Each circle of the spiral is divided into 4 different parts in order 
+    % to change the access pose of the robot depending on the position
+    % of the torus it is accessing
+
      for i=0:m-1
         for j=1:4
             if (j==1)
@@ -113,8 +137,16 @@ axis([0 5 0 5 0 5]);
             end
             p560.plot(Q);
         end
-    end
-    (3*(m-1)*m+1)+3*2*4
+     end
+     
+      % Calculation of the milling points. We use 2 variables.
+
+        % 1. Ptos_groove: it defines the places where it is necessary to
+        % groove and it stores the points which define each groove.
+
+        % 2.Ptos_groove_mill: it defines de poses puma has to do in
+        % order to reach each point and to mill (4 points x milling point)
+     
     s=8; c=20; r=0.01; l=0.08; offset=15;
     for i=0:s
        if(i~=s)
@@ -134,13 +166,20 @@ axis([0 5 0 5 0 5]);
        end
     end
     
+    % Ploting the grooves
     coor_groove = transl(Ptos_groove)';
-    coor_groove_mill = transl(Ptos_groove_mill)';
     
     for i=0:7
        plot3(coor_groove(1,i*c+1:(i+1)*c),coor_groove(2,i*c+1:(i+1)*c),coor_groove(3,i*c+1:(i+1)*c),'b','LineWidth',1); 
     end
   
+    % Animation of the puma, using the previously calculated
+    % Ptos_groove_milling. 
+    
+    % We use the previously calculated points in the  Ptos_groove_mill and
+    % divide them in two groups. The left and the right ones to make the
+    % pose vary due to that variable
+
     for i=0:7
         if (i < 4)
             Q = p560.ikine6s(transl(Ptos_groove_mill(:,:,(i*4+1):(i+1)*4)), 'run');
@@ -150,7 +189,14 @@ axis([0 5 0 5 0 5]);
         p560.plot(Q);
     end
     
+    % Calculation of the drilling points. We use 2 variables.
 
+        % 1. Ptos_circle: it defines the places where it is necessary to
+        % drill and it stores the points which define each circle.
+
+        % 2.Ptos_circle_drill: it defines de poses puma has to do in
+        % order to reach each point and to drill (3 points x drilling point)
+        
     s=8; c=40; r=0.02; offset=13.5;
     for i=0:s
        if(i~=s)
@@ -163,8 +209,8 @@ axis([0 5 0 5 0 5]);
        end
     end
     
+    % Ploting the circle
     coor_circle = transl(Ptos_circle)';
-    % coor_circle_drill = transl(Ptos_circle_drill)';
     
     for i=0:7
        plot3(coor_circle(1,i*c+1:(i+1)*c),coor_circle(2,i*c+1:(i+1)*c),coor_circle(3,i*c+1:(i+1)*c),'b');
@@ -177,12 +223,9 @@ axis([0 5 0 5 0 5]);
         else
             Q = p560.ikine6s(transl(Ptos_circle_drill(:,:,(i*3+1):(i+1)*3)), 'run')
         end
-        p560.plot(Q,'delay',2);
+        p560.plot(Q);
     end
 
-    
-    %scatter3(coor_circle_drill(1,:),coor_circle_drill(2,:),coor_circle_drill(3,:),'g','LineWidth',1);
-    
     axis equal
 
 
